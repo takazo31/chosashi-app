@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>調査士ノート</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --ink-mid: #2d2d4a;
+    --ink-light: #6b6b8a;
+    --parchment: #f7f5f0;
+    --parchment-dark: #ede9e0;
+    --accent: #4a6741;
+    --accent-light: #6a8f60;
+    --accent-pale: #e8f0e6;
+    --rule: #c8c4b8;
+    --survey-blue: #2c4a6e;
+    --survey-blue-light: #e8eef4;
+    --warn: #8b4513;
+    --tag-bg: #dde8d9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-title .symbol {
+    font-size: 1.3rem;
+    color: var(--accent-light);
+  }
+  .header-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .nav-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--parchment);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ===== MAIN LAYOUT ===== */
+  .app-container {
+    display: flex;
+    flex: 1;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--ink-mid);
+    color: var(--parchment);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: transform 0.3s;
+  }
+  .sidebar-header {
+    padding: 14px 16px 10px;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .genre-tree {
+    padding: 8px 0;
+    flex: 1;
+  }
+  .genre-item {
+    cursor: pointer;
+    user-select: none;
+  }
+  .genre-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 8px;
+    font-size: 0.82rem;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .genre-label:hover {
+    background: rgba(255,255,255,0.06);
+  }
+  .genre-label.active {
+    background: rgba(74,103,65,0.3);
+    border-left-color: var(--accent-light);
+    color: #a8d4a0;
+  }
+  .genre-icon { font-size: 1rem; min-width: 20px; }
+  .genre-name { flex: 1; }
+  .genre-count {
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.12);
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+  .genre-children {
+    display: none;
+    padding-left: 12px;
+  }
+  .genre-children.open { display: block; }
+  .genre-children .genre-label {
+    padding: 6px 16px 6px 12px;
+    font-size: 0.78rem;
+    color: rgba(247,245,240,0.75);
+  }
+  .genre-toggle { font-size: 0.65rem; color: var(--ink-light); }
+
+  /* ===== MAIN PANEL ===== */
+  .main-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .view.active { display: flex; }
+
+  /* ===== CHAT VIEW ===== */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .welcome-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid var(--accent);
+  }
+  .welcome-card h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .welcome-card p {
+    font-size: 0.82rem;
+    color: var(--ink-light);
+    line-height: 1.7;
+  }
+  .quick-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .quick-btn {
+    background: var(--accent-pale);
+    border: 1px solid var(--accent-light);
+    color: var(--accent);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .quick-btn:hover { background: var(--accent); color: white; }
+
+  .message {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .message.user { flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .msg-avatar.ai { background: var(--survey-blue); color: white; }
+  .msg-avatar.user { background: var(--accent); color: white; }
+  .msg-bubble {
+    max-width: 80%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.75;
+  }
+  .message.ai .msg-bubble {
+    background: white;
+    border: 1px solid var(--rule);
+    border-top-left-radius: 2px;
+  }
+  .message.user .msg-bubble {
+    background: var(--survey-blue);
+    color: white;
+    border-top-right-radius: 2px;
+  }
+  .msg-bubble h3 { font-size: 0.88rem; margin: 10px 0 4px; color: var(--survey-blue); }
+  .msg-bubble strong { color: var(--accent); }
+  .msg-bubble ul { padding-left: 16px; margin: 6px 0; }
+  .msg-bubble li { margin: 3px 0; }
+  .msg-bubble code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--parchment);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--warn);
+  }
+
+  .msg-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .note-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.2s;
+  }
+  .note-btn:hover { background: var(--accent-light); }
+  .note-btn.secondary {
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-light);
+  }
+  .note-btn.secondary:hover { background: var(--parchment-dark); color: var(--ink); }
+
+  /* Loading */
+  .loading-dots {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .loading-dots span {
+    width: 6px; height: 6px;
+    background: var(--ink-light);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* Input */
+  .chat-input-area {
+    padding: 12px 16px;
+    background: white;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .genre-selector-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .genre-selector-row label {
+    font-size: 0.72rem;
+    color: var(--ink-light);
+    white-space: nowrap;
+  }
+  .genre-select {
+    flex: 1;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--ink);
+    background: var(--parchment);
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input {
+    flex: 1;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .send-btn {
+    background: var(--survey-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover { background: #3a5f8a; }
+  .send-btn:disabled { background: var(--rule); cursor: not-allowed; }
+
+  /* ===== NOTES VIEW ===== */
+  .notes-toolbar {
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .notes-toolbar h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    flex: 1;
+    min-width: 120px;
+  }
+  .notes-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .notes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--ink-light);
+    text-align: center;
+    gap: 8px;
+  }
+  .notes-empty .big-icon { font-size: 3rem; opacity: 0.4; }
+  .notes-empty p { font-size: 0.82rem; line-height: 1.7; }
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .note-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    border-top: 3px solid var(--accent);
+  }
+  .note-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: var(--accent-light); }
+  .note-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .note-card-title { font-size: 0.88rem; font-weight: 700; line-height: 1.4; }
+  .note-card-genre {
+    font-size: 0.68rem;
+    background: var(--tag-bg);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    margin-left: 6px;
+  }
+  .note-card-preview {
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .note-card-footer {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .note-card-date { font-size: 0.7rem; color: var(--ink-light); }
+  .note-card-actions { display: flex; gap: 4px; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--ink-light);
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--accent-pale); color: var(--accent); border-color: var(--accent); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--ink-light);
+    padding: 0 4px;
+  }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .form-row { margin-bottom: 14px; }
+  .form-row label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink-light);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .form-input {
+    width: 100%;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  textarea.form-input { resize: vertical; min-height: 120px; }
+
+  .obsidian-info {
+    background: var(--survey-blue-light);
+    border: 1px solid #b8cfe0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .obsidian-info h4 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--survey-blue);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .obsidian-info ol {
+    font-size: 0.76rem;
+    color: var(--ink-mid);
+    padding-left: 16px;
+    line-height: 1.8;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    z-index: 300;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Mobile */
+  .sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--parchment);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 150;
+      transform: translateX(-100%);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-toggle { display: block; }
+    .app-container { flex-direction: column; }
+    .notes-grid { grid-template-columns: 1fr; }
+    .main-panel { height: calc(100vh - 48px); }
+    .msg-bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="header-title">
+      <span class="symbol">⊞</span>
+      調査士ノート
+    </div>
+  </div>
+  <div class="header-nav">
+    <button class="nav-btn active" onclick="switchView('chat',this)">学習</button>
+    <button class="nav-btn" onclick="switchView('notes',this)">ノート</button>
+  </div>
+</header>
+
+<div class="app-container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">ジャンルツリー</div>
+    <div class="genre-tree" id="genreTree"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-panel">
+
+    <!-- CHAT VIEW -->
+    <div class="view active" id="view-chat">
+      <div class="chat-area" id="chatArea">
+        <div class="welcome-card">
+          <h2>🗾 土地家屋調査士 学習AI</h2>
+          <p>わからないことを何でも聞いてください。<br>理解できたら「ノート化」ボタンでObsidianに保存できます。</p>
+          <div class="quick-topics">
+            <button class="quick-btn" onclick="quickAsk('表題登記と権利登記の違いは？')">表題登記と権利登記</button>
+            <button class="quick-btn" onclick="quickAsk('筆界と所有権界の違いを教えて')">筆界と所有権界</button>
+            <button class="quick-btn" onclick="quickAsk('地積測量図の記載事項は？')">地積測量図</button>
+            <button class="quick-btn" onclick="quickAsk('建物の床面積の算定方法は？')">床面積の算定</button>
+            <button class="quick-btn" onclick="quickAsk('土地の分筆登記の手続きを教えて')">分筆登記の手続き</button>
+            <button class="quick-btn" onclick="quickAsk('境界確認の法的根拠は？')">境界確認の根拠</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="genre-selector-row">
+          <label>ジャンル：</label>
+          <select class="genre-select" id="currentGenre">
+            <option value="不動産登記法">不動産登記法</option>
+            <option value="民法">民法</option>
+            <option value="測量">測量</option>
+            <option value="建物調査">建物調査</option>
+            <option value="土地調査">土地調査</option>
+            <option value="筆界特定">筆界特定</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="chatInput" placeholder="質問を入力… (Shift+Enterで改行)" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES VIEW -->
+    <div class="view" id="view-notes">
+      <div class="notes-toolbar">
+        <h3>📚 保存済みノート</h3>
+        <select class="genre-select" id="filterGenre" style="max-width:160px" onchange="renderNotes()">
+          <option value="">すべてのジャンル</option>
+          <option value="不動産登記法">不動産登記法</option>
+          <option value="民法">民法</option>
+          <option value="測量">測量</option>
+          <option value="建物調査">建物調査</option>
+          <option value="土地調査">土地調査</option>
+          <option value="筆界特定">筆界特定</option>
+          <option value="その他">その他</option>
+        </select>
+        <button class="note-btn secondary" onclick="exportAllNotes()">📦 一括エクスポート</button>
+      </div>
+      <div class="notes-area">
+        <div class="notes-empty" id="notesEmpty">
+          <div class="big-icon">📝</div>
+          <p>まだノートがありません。<br>チャットで学習して「ノート化」ボタンを押してください。</p>
+        </div>
+        <div class="notes-grid" id="notesGrid"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- NOTE MODAL -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📝 ノートを保存</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>タイトル</label>
+        <input class="form-input" id="noteTitle" type="text" placeholder="例：筆界と所有権界の違い">
+      </div>
+      <div class="form-row">
+        <label>ジャンル</label>
+        <select class="form-input" id="noteGenre">
+          <option value="不動産登記法">不動産登記法</option>
+          <option value="民法">民法</option>
+          <option value="測量">測量</option>
+          <option value="建物調査">建物調査</option>
+          <option value="土地調査">土地調査</option>
+          <option value="筆界特定">筆界特定</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>内容</label>
+        <textarea class="form-input" id="noteContent" placeholder="ここにノート内容が入ります..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>タグ（カンマ区切り）</label>
+        <input class="form-input" id="noteTags" type="text" placeholder="例：登記, 境界, 重要">
+      </div>
+      <div class="obsidian-info">
+        <h4>📂 Obsidianへの保存手順</h4>
+        <ol>
+          <li>「.mdをダウンロード」ボタンを押す</li>
+          <li>ダウンロードされたファイルをObsidianのVaultフォルダへ移動</li>
+          <li>フォルダ構成: <code>調査士/[ジャンル]/</code> を推奨</li>
+          <li>Google DriveやiCloudでVaultを同期すればどこでも閲覧可</li>
+        </ol>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="note-btn secondary" onclick="closeModal()">キャンセル</button>
+      <button class="note-btn secondary" onclick="copyMarkdown()">📋 Markdownコピー</button>
+      <button class="note-btn" onclick="downloadMd()">⬇ .mdをダウンロード</button>
+      <button class="note-btn" style="background:var(--survey-blue)" onclick="saveNote()">💾 アプリ内に保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let notes = JSON.parse(localStorage.getItem('chosashi_notes') || '[]');
+let currentMdContent = '';
+let pendingNote = null;
+
+// ===== GENRE TREE =====
+const genres = [
+  { id: 'reg', label: '不動産登記法', icon: '📋', children: ['表題登記', '権利登記', '区分建物', '仮登記', '更正登記'] },
+  { id: 'civil', label: '民法', icon: '⚖️', children: ['物権', '境界・筆界', '相続と登記', '時効'] },
+  { id: 'survey', label: '測量', icon: '📐', children: ['地積測量図', 'GNSS測量', 'トータルステーション', '誤差と精度'] },
+  { id: 'building', label: '建物調査', icon: '🏠', children: ['床面積算定', '建物の種類', '区分所有', '新築表題登記'] },
+  { id: 'land', label: '土地調査', icon: '🗾', children: ['分筆・合筆', '地目変更', '地積更正', '土地表題登記'] },
+  { id: 'boundary', label: '筆界特定', icon: '🔲', children: ['筆界特定制度', '筆界調査委員', '境界確認'] },
+  { id: 'other', label: 'その他', icon: '📌', children: [] },
+];
+
+function buildGenreTree() {
+  const tree = document.getElementById('genreTree');
+  genres.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'genre-item';
+    const count = notes.filter(n => n.genre === g.label).length;
+    const hasChildren = g.children.length > 0;
+    item.innerHTML = `
+      <div class="genre-label" onclick="filterByGenre('${g.label}', this)">
+        <span class="genre-icon">${g.icon}</span>
+        <span class="genre-name">${g.label}</span>
+        ${count > 0 ? `<span class="genre-count">${count}</span>` : ''}
+        ${hasChildren ? '<span class="genre-toggle">▶</span>' : ''}
+      </div>
+      ${hasChildren ? `<div class="genre-children" id="ch-${g.id}">
+        ${g.children.map(c => `<div class="genre-label"><span class="genre-icon">└</span><span>${c}</span></div>`).join('')}
+      </div>` : ''}
+    `;
+    if (hasChildren) {
+      item.querySelector('.genre-label').addEventListener('click', (e) => {
+        const ch = document.getElementById(`ch-${g.id}`);
+        const tog = item.querySelector('.genre-toggle');
+        ch.classList.toggle('open');
+        tog.textContent = ch.classList.contains('open') ? '▾' : '▶';
+      });
+    }
+    tree.appendChild(item);
+  });
+}
+
+function filterByGenre(genre, el) {
+  document.querySelectorAll('.genre-label').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('filterGenre').value = genre;
+  switchView('notes', document.querySelector('.nav-btn:not(:first-child)'));
+  renderNotes();
+}
+
+// ===== VIEWS =====
+function switchView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  btn.classList.add('active');
+  if (view === 'notes') renderNotes();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ===== CHAT =====
+const SYSTEM_PROMPT = `あなたは土地家屋調査士試験の専門家講師です。
+受験生のわからない点を丁寧に、正確に解説してください。
+
+回答のルール：
+- 日本語で回答する
+- 法律条文がある場合は根拠条文を示す（例：不動産登記法◯条）
+- 専門用語は初出時に簡単な説明を加える
+- 重要なポイントは強調する
+- 試験頻出事項の場合はその旨を記載する
+- 回答は実用的で試験対策に役立つ内容にする
+- 長すぎず、要点をまとめる`;
+
+let chatHistory = [];
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const genre = document.getElementById('currentGenre').value;
+  const text = input.value.trim();
+  if (!text) return;
+
+  appendMessage('user', text);
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  const loadingId = appendLoading();
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'エラーが発生しました。';
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    removeLoading(loadingId);
+    appendMessage('ai', reply, text, genre);
+  } catch (e) {
+    removeLoading(loadingId);
+    appendMessage('ai', 'エラーが発生しました。ネットワークを確認してください。');
+  }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function appendMessage(role, text, question = '', genre = '') {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  const avatar = role === 'ai' ? '⊞' : '👤';
+  const bubbleContent = role === 'ai' ? formatMd(text) : escHtml(text);
+
+  div.innerHTML = `
+    <div class="msg-avatar ${role}">${avatar}</div>
+    <div>
+      <div class="msg-bubble">${bubbleContent}</div>
+      ${role === 'ai' ? `<div class="msg-actions">
+        <button class="note-btn" onclick='openNoteModal(${JSON.stringify(question)}, ${JSON.stringify(text)}, ${JSON.stringify(genre)})'>📝 ノート化</button>
+        <button class="note-btn secondary" onclick='copyText(${JSON.stringify(text)})'>📋 コピー</button>
+      </div>` : ''}
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function appendLoading() {
+  const area = document.getElementById('chatArea');
+  const id = 'loading_' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'message ai';
+  div.id = id;
+  div.innerHTML = `
+    <div class="msg-avatar ai">⊞</div>
+    <div class="msg-bubble"><div class="loading-dots"><span></span><span></span><span></span></div></div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function removeLoading(id) {
+  document.getElementById(id)?.remove();
+}
+
+function quickAsk(q) {
+  document.getElementById('chatInput').value = q;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ===== MARKDOWN FORMATTER =====
+function formatMd(text) {
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== NOTE MODAL =====
+function openNoteModal(question, answer, genre) {
+  const title = question.length > 30 ? question.slice(0, 30) + '…' : question;
+  document.getElementById('noteTitle').value = title;
+  document.getElementById('noteGenre').value = genre || 'その他';
+  document.getElementById('noteContent').value = answer;
+  document.getElementById('noteTags').value = genre;
+  document.getElementById('noteModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('noteModal').classList.remove('open');
+}
+
+function buildMarkdown() {
+  const title = document.getElementById('noteTitle').value;
+  const genre = document.getElementById('noteGenre').value;
+  const content = document.getElementById('noteContent').value;
+  const tags = document.getElementById('noteTags').value;
+  const date = new Date().toISOString().split('T')[0];
+  const tagList = tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `#${t}`).join(' ');
+  return `---
+title: "${title}"
+genre: ${genre}
+date: ${date}
+tags: [${tags}]
+---
+
+# ${title}
+
+${content}
+
+---
+${tagList}
+`;
+}
+
+function downloadMd() {
+  const title = document.getElementById('noteTitle').value || 'note';
+  const md = buildMarkdown();
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${title.replace(/[/\\:*?"<>|]/g, '_')}.md`;
+  a.click();
+  showToast('✅ .mdファイルをダウンロードしました');
+}
+
+function copyMarkdown() {
+  navigator.clipboard.writeText(buildMarkdown()).then(() => showToast('📋 Markdownをコピーしました'));
+}
+
+function saveNote() {
+  const note = {
+    id: Date.now(),
+    title: document.getElementById('noteTitle').value || '無題',
+    genre: document.getElementById('noteGenre').value,
+    content: document.getElementById('noteContent').value,
+    tags: document.getElementById('noteTags').value,
+    date: new Date().toLocaleDateString('ja-JP'),
+  };
+  notes.unshift(note);
+  localStorage.setItem('chosashi_notes', JSON.stringify(notes));
+  closeModal();
+  showToast('💾 ノートを保存しました');
+  buildGenreTree();
+}
+
+// ===== NOTES VIEW =====
+function renderNotes() {
+  const filter = document.getElementById('filterGenre').value;
+  const filtered = filter ? notes.filter(n => n.genre === filter) : notes;
+  const grid = document.getElementById('notesGrid');
+  const empty = document.getElementById('notesEmpty');
+
+  if (filtered.length === 0) {
+    empty.style.display = 'flex';
+    grid.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(n => `
+    <div class="note-card">
+      <div class="note-card-header">
+        <div class="note-card-title">${escHtml(n.title)}</div>
+        <span class="note-card-genre">${escHtml(n.genre)}</span>
+      </div>
+      <div class="note-card-preview">${escHtml(n.content)}</div>
+      <div class="note-card-footer">
+        <span class="note-card-date">${n.date}</span>
+        <div class="note-card-actions">
+          <button class="icon-btn" onclick="downloadNoteById(${n.id})">⬇ md</button>
+          <button class="icon-btn" onclick="deleteNote(${n.id})">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function downloadNoteById(id) {
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  const md = `---\ntitle: "${n.title}"\ngenre: ${n.genre}\ndate: ${n.date}\ntags: [${n.tags}]\n---\n\n# ${n.title}\n\n${n.content}\n`;
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${n.title.replace(/[/\\:*?"<>|]/g, '_')}.md`;
+  a.click();
+  showToast('⬇ ダウンロードしました');
+}
+
+function exportAllNotes() {
+  if (notes.length === 0) { showToast('⚠ ノートがありません'); return; }
+  const all = notes.map(n =>
+    `---\ntitle: "${n.title}"\ngenre: ${n.genre}\ndate: ${n.date}\ntags: [${n.tags}]\n---\n\n# ${n.title}\n\n${n.content}\n\n---\n`
+  ).join('\n');
+  const blob = new Blob([all], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '調査士ノート_全件.md';
+  a.click();
+  showToast(`📦 ${notes.length}件をエクスポートしました`);
+}
+
+function deleteNote(id) {
+  if (!confirm('このノートを削除しますか？')) return;
+  notes = notes.filter(n => n.id !== id);
+  localStorage.setItem('chosashi_notes', JSON.stringify(notes));
+  renderNotes();
+  buildGenreTree();
+  showToast('🗑 削除しました');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('📋 コピーしました'));
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+buildGenreTree();
+</script>
+</body>
+</html>
